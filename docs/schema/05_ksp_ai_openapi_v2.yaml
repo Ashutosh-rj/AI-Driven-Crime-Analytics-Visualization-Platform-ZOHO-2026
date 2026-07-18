@@ -1,0 +1,411 @@
+openapi: 3.0.3
+info:
+  title: KSP AI — National Crime Intelligence & Operations System (NCIOS) API
+  version: 2.0.0
+  description: |
+    Authoritative REST API specification for KSP AI microservices deployed across Zoho Catalyst
+    AppSail and Serverless Functions. Enforces Zero-Trust rank-based RBAC, ABAC geofence policies,
+    and strict JSON Schema validation aligned with the 26 KSP FIR database tables.
+  contact:
+    name: Enterprise Architecture Council (KSP AI)
+    email: architecture@ksp.gov.in
+servers:
+  - url: https://api.ksp-ai.catalyst.zoho.in/api/v2
+    description: Production Environment (Catalyst AppSail / Indian Data Residency)
+  - url: https://staging-api.ksp-ai.catalyst.zoho.in/api/v2
+    description: Staging Environment (For Integration Testing)
+
+security:
+  - OAuth2Bearer: []
+  - ApiKeyAuth: []
+
+paths:
+  /cases/register:
+    post:
+      summary: Register a new First Information Report (FIR) or UDR
+      description: |
+        Commits a new crime record into `CaseMaster`, `ComplainantDetails`, `VictimDetails`, and
+        `ActSectionAssociation`. Triggers asynchronous Pinecone RAG embedding and emits a `CaseRegisteredEvent`.
+      operationId: registerFIR
+      tags:
+        - Crime Registration Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FIRRegistrationRequest'
+      responses:
+        '201':
+          description: FIR successfully registered and committed to OLTP Data Store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FIRRegistrationResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  /cases/{crime_no}:
+    get:
+      summary: Retrieve complete CaseMaster dossier by Crime Number
+      description: Returns full case narrative, assigned IO, victims, accused, and statutory sections.
+      operationId: getCaseByCrimeNo
+      tags:
+        - Crime Registration Service
+      parameters:
+        - name: crime_no
+          in: path
+          required: true
+          description: Unique Crime Number e.g., "FIR/0123/2026"
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseDetailView'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+
+  /investigations/{case_id}/arrests:
+    post:
+      summary: Record formal arrest, surrender, or preventive detention of an accused
+      description: Commits arrest records to `ArrestSurrender` table and links to `AccusedDetails`.
+      operationId: recordArrest
+      tags:
+        - Investigation Service
+      parameters:
+        - name: case_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArrestRecordRequest'
+      responses:
+        '201':
+          description: Arrest recorded successfully
+        '403':
+          $ref: '#/components/responses/403Forbidden'
+
+  /investigations/{case_id}/chargesheet:
+    post:
+      summary: Submit final chargesheet / investigation report (`ChargesheetDetails`)
+      description: Closes the active investigation stage and transitions case status to court trial.
+      operationId: fileChargesheet
+      tags:
+        - Investigation Service
+      parameters:
+        - name: case_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChargesheetRequest'
+      responses:
+        '201':
+          description: Chargesheet filed and case status updated
+
+  /intelligence/accused/{master_id}/syndicate:
+    get:
+      summary: Query Neo4j Aura graph to uncover syndicate associates and 3-hop criminal connections
+      description: Executes multi-hop shortest path and Louvain community detection on target accused ID.
+      operationId: getSyndicateNetwork
+      tags:
+        - Network Intelligence Service
+      parameters:
+        - name: master_id
+          in: path
+          required: true
+          description: Master UUID (`accused_master_id` / `person_id`) of the target accused
+          schema:
+            type: string
+            format: uuid
+        - name: max_hops
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 3
+            maximum: 5
+      responses:
+        '200':
+          description: Graph network traversal graph returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyndicateGraphResponse'
+
+  /intelligence/swarm/investigate:
+    post:
+      summary: Trigger the 15-Agent LangGraph Swarm for autonomous multi-turn investigative reasoning
+      description: |
+        Spawns an asynchronous or synchronous reasoning workflow where the Supervisor Agent coordinates
+        SQL queries, Neo4j traversals, RAG searches, and ML risk scoring.
+      operationId: triggerLangGraphSwarm
+      tags:
+        - AI/ML Intelligence Context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - prompt
+                - target_person_ids
+              properties:
+                prompt:
+                  type: string
+                  example: "Analyze repeat offender P-8841 and identify all syndicate links."
+                target_person_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Swarm completed execution and generated dossier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwarmExecutionResult'
+
+  /analytics/hotspots:
+    get:
+      summary: Retrieve spatiotemporal crime hotspots generated by ML clustering engines
+      operationId: getCrimeHotspots
+      tags:
+        - Analytics & Reporting Context
+      parameters:
+        - name: district_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: time_window_days
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 7
+      responses:
+        '200':
+          description: Hotspot clusters returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotspotListResponse'
+
+components:
+  securitySchemes:
+    OAuth2Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: KSP AI Rank-based JWT issued by Identity & Access Service
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-KSP-API-KEY
+
+  responses:
+    400BadRequest:
+      description: Invalid JSON schema or failed check constraint validation
+    403Forbidden:
+      description: RBAC rank check failed or ABAC geofence violation (officer outside jurisdiction)
+    404NotFound:
+      description: Requested case or entity ID not found
+    500InternalError:
+      description: Internal microservice or data store failure
+
+  schemas:
+    FIRRegistrationRequest:
+      type: object
+      required:
+        - crime_no
+        - unit_id
+        - district_id
+        - case_category_id
+        - gravity_offence_id
+        - incident_from_date
+        - brief_facts
+        - place_of_incident
+      properties:
+        crime_no:
+          type: string
+          example: "FIR/0123/2026"
+        unit_id:
+          type: integer
+          format: int64
+          example: 104
+        district_id:
+          type: integer
+          format: int64
+          example: 12
+        case_category_id:
+          type: integer
+          format: int64
+          example: 1
+        gravity_offence_id:
+          type: integer
+          format: int64
+          example: 1
+        incident_from_date:
+          type: string
+          format: date-time
+        brief_facts:
+          type: string
+          example: "Accused broke into residence via window grill using hydraulic jack..."
+        place_of_incident:
+          type: string
+          example: "4th Block, Koramangala, Bengaluru"
+        latitude:
+          type: number
+          format: double
+          example: 12.9352
+        longitude:
+          type: number
+          format: double
+          example: 77.6245
+
+    FIRRegistrationResponse:
+      type: object
+      properties:
+        case_master_id:
+          type: integer
+          format: int64
+        crime_no:
+          type: string
+        status:
+          type: string
+          example: "REGISTERED"
+        cctns_guid:
+          type: string
+          format: uuid
+
+    CaseDetailView:
+      type: object
+      properties:
+        case_master_id:
+          type: integer
+          format: int64
+        crime_no:
+          type: string
+        brief_facts:
+          type: string
+        assigned_io_name:
+          type: string
+        case_status_name:
+          type: string
+
+    ArrestRecordRequest:
+      type: object
+      required:
+        - accused_id
+        - arrest_surrender_date
+        - arrest_type
+      properties:
+        accused_id:
+          type: integer
+          format: int64
+        arrest_surrender_date:
+          type: string
+          format: date-time
+        arrest_type:
+          type: string
+          enum: [POLICE_ARREST, COURT_SURRENDER, PREVENTIVE_DETENTION]
+
+    ChargesheetRequest:
+      type: object
+      required:
+        - csnumber
+        - csdate
+        - cstype
+        - court_id
+      properties:
+        csnumber:
+          type: string
+          example: "CS/0089/2026"
+        csdate:
+          type: string
+          format: date-time
+        cstype:
+          type: string
+          enum: [CHARGE_SHEET, A_REPORT, B_REPORT, C_REPORT]
+        court_id:
+          type: integer
+          format: int64
+
+    SyndicateGraphResponse:
+      type: object
+      properties:
+        target_person_id:
+          type: string
+          format: uuid
+        syndicate_detected:
+          type: string
+        connected_members:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              role:
+                type: string
+              pagerank_score:
+                type: number
+                format: double
+
+    SwarmExecutionResult:
+      type: object
+      properties:
+        session_id:
+          type: string
+        execution_trace:
+          type: array
+          items:
+            type: string
+        final_intelligence_dossier:
+          type: string
+        is_verified:
+          type: boolean
+
+    HotspotListResponse:
+      type: object
+      properties:
+        district_id:
+          type: integer
+          format: int64
+        hotspots:
+          type: array
+          items:
+            type: object
+            properties:
+              center_lat:
+                type: number
+              center_long:
+                type: number
+              radius_meters:
+                type: number
+              risk_score:
+                type: number

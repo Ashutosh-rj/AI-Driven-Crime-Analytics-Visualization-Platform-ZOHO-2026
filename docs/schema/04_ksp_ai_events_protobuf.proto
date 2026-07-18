@@ -1,0 +1,141 @@
+// ============================================================================
+// KSP AI: National Crime Intelligence & Operations System (NCIOS)
+// Authoritative Google Protocol Buffers (v3) Event Schema Definition
+// ============================================================================
+// Classification: RESTRICTED — Law Enforcement Sensitive
+// Description: Defines binary serialization contracts for intra-platform domain events
+// across Zoho Catalyst Signals and Confluent Kafka streaming backbones. Supports strict
+// schema evolution, dead-letter routing, and end-to-end distributed tracing.
+// ============================================================================
+
+syntax = "proto3";
+
+package ksp.ai.events.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// ============================================================================
+// PART 1: UNIVERSAL EVENT ENVELOPE (STANDARD HEADER FOR ALL EVENT STREAMS)
+// ============================================================================
+
+message EventEnvelope {
+    string event_id = 1;              // UUIDv4 unique event identifier
+    google.protobuf.Timestamp timestamp = 2; // UTC creation timestamp
+    string trace_id = 3;              // W3C Distributed Tracing ID for observability
+    string correlation_id = 4;        // Saga transaction correlation ID
+    string producer_service = 5;      // Source microservice e.g., "CrimeRegistrationService"
+    string schema_version = 6;        // Semantic version e.g., "v1.4.0"
+    string tenant_state_code = 7;     // State code e.g., "KA" (Karnataka)
+    
+    // Exactly one payload is populated per envelope
+    oneof payload {
+        CaseRegisteredEvent case_registered = 10;
+        AccusedArrestedEvent accused_arrested = 11;
+        ChargesheetFiledEvent chargesheet_filed = 12;
+        HotspotDetectedEvent hotspot_detected = 13;
+        GangLinkInferredEvent gang_link_inferred = 14;
+        EmergencySOSTriggeredEvent emergency_sos_triggered = 15;
+    }
+}
+
+// ============================================================================
+// PART 2: DOMAIN EVENT PAYLOAD DEFINITIONS
+// ============================================================================
+
+// 1. CaseRegisteredEvent: Emitted when an FIR/UDR is successfully committed to CaseMaster
+message CaseRegisteredEvent {
+    int64 case_master_id = 1;
+    string crime_no = 2;              // e.g., "FIR/0123/2026"
+    string case_no = 3;               // State/ICJS unique case number
+    int64 unit_id = 4;                // Police Station ID
+    int64 district_id = 5;
+    int64 case_category_id = 6;       // FIR vs UDR vs PAR
+    int64 gravity_offence_id = 7;     // Heinous vs Non-Heinous
+    google.protobuf.Timestamp incident_date = 8;
+    string brief_facts = 9;           // Narrative for asynchronous Pinecone RAG embedding
+    double latitude = 10;
+    double longitude = 11;
+    int64 registering_officer_id = 12;
+    repeated StatutoryCharge initial_charges = 13;
+}
+
+message StatutoryCharge {
+    string act_code = 1;              // e.g., "BNS", "IPC"
+    string section_code = 2;          // e.g., "103(1)", "302"
+    string crime_head_name = 3;       // e.g., "Murder"
+    string crime_subhead_name = 4;
+}
+
+// 2. AccusedArrestedEvent: Emitted when an arrest is executed and recorded
+message AccusedArrestedEvent {
+    int64 arrest_surrender_id = 1;
+    int64 case_master_id = 2;
+    string crime_no = 3;
+    int64 accused_id = 4;
+    string accused_master_id = 5;     // UUID linking to Neo4j Person node
+    string accused_name = 6;
+    string alias_name = 7;
+    google.protobuf.Timestamp arrest_date = 8;
+    string arrest_type = 9;           // e.g., "POLICE_ARREST", "COURT_SURRENDER"
+    int64 arresting_io_id = 10;
+    string custody_location = 11;
+    bool is_repeat_offender = 12;
+}
+
+// 3. ChargesheetFiledEvent: Emitted when investigation concludes and chargesheet is submitted to court
+message ChargesheetFiledEvent {
+    int64 chargesheet_id = 1;
+    int64 case_master_id = 2;
+    string crime_no = 3;
+    string cs_number = 4;             // Final Report Number
+    string cs_type = 5;               // "CHARGE_SHEET", "A_REPORT", "B_REPORT", "C_REPORT"
+    google.protobuf.Timestamp filing_date = 6;
+    int64 court_id = 7;
+    int64 investigating_officer_id = 8;
+    int32 total_accused_charge_sheeted = 9;
+    int32 total_witnesses_listed = 10;
+    string summary_of_evidence = 11;
+}
+
+// 4. HotspotDetectedEvent: Emitted by AI Analytics engine when spatial clustering detects spike
+message HotspotDetectedEvent {
+    string hotspot_id = 1;
+    int64 district_id = 2;
+    string district_name = 3;
+    double center_latitude = 4;
+    double center_longitude = 5;
+    double radius_meters = 6;
+    double risk_density_score = 7;    // Normalized score 0.0 to 1.0
+    string dominant_crime_head = 8;   // e.g., "Property Offences - Chain Snatching"
+    int32 incident_count_last_7_days = 9;
+    double percentage_increase_vs_baseline = 10;
+    google.protobuf.Timestamp detection_time = 11;
+}
+
+// 5. GangLinkInferredEvent: Emitted by Neo4j Louvain/Graph Data Science pipeline
+message GangLinkInferredEvent {
+    string inference_id = 1;
+    string syndicate_org_id = 2;      // e.g., "GANG_SYN_14"
+    string syndicate_name = 3;
+    string source_person_master_id = 4;
+    string target_person_master_id = 5;
+    string relationship_type = 6;     // e.g., "CO_ACCUSED_WITH", "SHARED_DEFENSE_COUNSEL"
+    int32 shared_cases_count = 7;
+    double confidence_score = 8;      // 0.0 to 1.0
+    google.protobuf.Timestamp inference_timestamp = 9;
+}
+
+// 6. EmergencySOSTriggeredEvent: Emitted by Beat Constable mobile app during high-threat field situations
+message EmergencySOSTriggeredEvent {
+    string alert_id = 1;
+    int64 officer_employee_id = 2;
+    string kgid = 3;
+    string officer_name = 4;
+    int64 unit_id = 5;
+    double current_latitude = 6;
+    double current_longitude = 7;
+    double accuracy_meters = 8;
+    int32 battery_level_percentage = 9;
+    string audio_recording_s3_uri = 10;
+    google.protobuf.Timestamp trigger_timestamp = 11;
+}
