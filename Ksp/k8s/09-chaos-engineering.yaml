@@ -1,0 +1,37 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: backend-pod-kill
+  namespace: default
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    namespaces:
+      - default
+    labelSelectors:
+      app: backend
+  scheduler:
+    cron: "@every 15m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: postgres-network-delay
+  namespace: default
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - default
+    labelSelectors:
+      app: postgres
+  delay:
+    latency: '100ms'
+    correlation: '100'
+    jitter: '0ms'
+  direction: to
+  scheduler:
+    cron: "@every 30m"
+  duration: '5m'

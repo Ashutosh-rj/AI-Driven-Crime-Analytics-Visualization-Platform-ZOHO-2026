@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--color-bg-primary);
+  --color-surface: var(--color-bg-secondary);
+  --color-card: var(--color-bg-card);
+  
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-strong: var(--color-border-strong);
+  
+  --color-accent-emerald: var(--color-accent-emerald);
+  --color-accent-charcoal: var(--color-accent-charcoal);
+  --color-accent-amber: var(--color-accent-amber);
+  --color-accent-slate: var(--color-accent-slate);
+  --color-accent-gray: var(--color-accent-gray);
+  --color-accent-blue: var(--color-accent-blue);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Custom shadows for premium feel */
+  --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px var(--color-accent-emerald);
+}
+
+@layer base {
+  :root {
+    /* Light Mode - Vercel/Linear inspired */
+    --color-bg-primary: #FAFAFA;
+    --color-bg-secondary: #F3F4F6;
+    --color-bg-card: #FFFFFF;
+    
+    --color-text-primary: #111827;
+    --color-text-secondary: #4B5563;
+    --color-text-muted: #9CA3AF;
+    
+    --color-border-subtle: rgba(0, 0, 0, 0.06);
+    --color-border-strong: rgba(0, 0, 0, 0.12);
+
+    --color-accent-emerald: #10B981;
+    --color-accent-charcoal: #111827;
+    --color-accent-amber: #F59E0B;
+    --color-accent-slate: #475569;
+    --color-accent-gray: #6B7280;
+    --color-accent-blue: #3B82F6;
+  }
+
+  .dark {
+    /* Dark Mode - Stripe/Linear inspired */
+    --color-bg-primary: #000000;
+    --color-bg-secondary: #0A0A0A;
+    --color-bg-card: #111111;
+    
+    --color-text-primary: #EDEDED;
+    --color-text-secondary: #A1A1AA;
+    --color-text-muted: #71717A;
+    
+    --color-border-subtle: rgba(255, 255, 255, 0.08);
+    --color-border-strong: rgba(255, 255, 255, 0.15);
+
+    --color-accent-emerald: #10B981; /* Stripe green */
+    --color-accent-charcoal: #FAFAFA; /* Inverted for dark mode */
+    --color-accent-amber: #F59E0B;
+    --color-accent-slate: #94A3B8;
+    --color-accent-gray: #71717A;
+    --color-accent-blue: #3B82F6;
+  }
+
+  html, body {
+    @apply bg-background text-text-primary font-sans antialiased m-0 transition-colors duration-300 ease-out selection:bg-accent-emerald/30 selection:text-text-primary;
+    /* Add subtle noise texture if desired, but clean is often better */
+  }
+
+  /* Custom Scrollbar for a premium feel */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border-strong rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-text-muted;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-card/60 backdrop-blur-xl border border-border-subtle rounded-2xl p-6 shadow-sm transition-all duration-300 relative overflow-hidden;
+  }
+  
+  /* Adds a subtle top inner highlight for depth on glass panels */
+  .glass-panel::before {
+    content: '';
+    @apply absolute inset-0 rounded-2xl pointer-events-none;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-input {
+    @apply w-full bg-surface/50 border border-border-strong text-text-primary rounded-xl px-4 py-3 outline-none transition-all duration-200 placeholder:text-text-muted;
+  }
+  .glass-input:focus {
+    @apply border-accent-emerald bg-surface ring-1 ring-accent-emerald/50 shadow-[0_0_0_4px_rgba(16,185,129,0.1)];
+  }
+
+  .btn-primary {
+    @apply relative w-full bg-accent-charcoal text-background font-semibold py-3 px-6 rounded-xl overflow-hidden shadow-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer;
+  }
+  .btn-primary:hover {
+    @apply shadow-md transform -translate-y-0.5;
+  }
+  .btn-primary:active {
+    @apply transform translate-y-0 shadow-sm opacity-90;
+  }
+
+  .btn-secondary {
+    @apply w-full bg-surface border border-border-strong hover:bg-border-subtle text-text-primary font-medium py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer;
+  }
+  .btn-secondary:active {
+    @apply scale-[0.98];
+  }
+
+  /* Glowing effects for the Terminal / Swarm UI */
+  .terminal {
+    @apply bg-[#000000] border border-border-strong rounded-xl p-5 font-mono text-[13px] h-80 overflow-y-auto leading-relaxed shadow-inner text-gray-300 relative;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+  }
+
+  .terminal-time {
+    @apply text-gray-600 mr-3 select-none;
+  }
+
+  .tag-agent { @apply text-emerald-400 font-semibold tracking-wide; text-shadow: 0 0 10px rgba(52, 211, 153, 0.3); }
+  .tag-sql { @apply text-blue-400 font-semibold tracking-wide; text-shadow: 0 0 10px rgba(96, 165, 250, 0.3); }
+  .tag-graph { @apply text-amber-400 font-semibold tracking-wide; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+  .tag-verify { @apply text-purple-400 font-semibold tracking-wide; text-shadow: 0 0 10px rgba(192, 132, 252, 0.3); }
+
+  /* Utility animations */
+  .animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

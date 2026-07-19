@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY src/backend/requirements.txt .
+RUN pip install --default-timeout=1000 --no-cache-dir -r requirements.txt
+
+COPY src/backend/ src/backend/
+
+EXPOSE 8000
+CMD ["python", "src/backend/main.py"]

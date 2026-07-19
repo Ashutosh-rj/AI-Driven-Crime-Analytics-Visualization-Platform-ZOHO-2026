@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: "ksp-backend"
+    static_configs:
+      - targets: ["ksp-backend:8000"]
+      
+  - job_name: "ksp-ml"
+    static_configs:
+      - targets: ["ksp-ml:8001"]

@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo4j-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neo4j
+  template:
+    metadata:
+      labels:
+        app: neo4j
+    spec:
+      containers:
+        - name: neo4j
+          image: neo4j:5
+          ports:
+            - containerPort: 7474
+            - containerPort: 7687
+          env:
+            - name: NEO4J_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ksp-secrets
+                  key: NEO4J_USER
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ksp-secrets
+                  key: NEO4J_PASSWORD
+            - name: NEO4J_AUTH
+              value: "$(NEO4J_USER)/$(NEO4J_PASSWORD)"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+          securityContext:
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 7474
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 7474
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          volumeMounts:
+            - name: neo4jdata
+              mountPath: /data
+      volumes:
+        - name: neo4jdata
+          persistentVolumeClaim:
+            claimName: neo4j-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo4j
+spec:
+  ports:
+    - port: 7687
+      name: bolt
+    - port: 7474
+      name: http
+  selector:
+    app: neo4j
