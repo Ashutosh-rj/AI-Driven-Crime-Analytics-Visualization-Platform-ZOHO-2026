@@ -3,8 +3,12 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 import numpy as np
 from sklearn.cluster import DBSCAN
+from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI(title="KSP AI ML Service", description="Standalone ML pipeline for geospatial and predictive analytics.")
+
+# 1. Observability: Expose /metrics for Prometheus
+Instrumentator().instrument(app).expose(app)
 
 class CaseRecord(BaseModel):
     id: str
