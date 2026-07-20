@@ -22,7 +22,7 @@ prometheus-fastapi-instrumentator==6.1.0
 python-jose[cryptography]==3.3.0
 slowapi==0.1.9
 pydantic-settings==2.1.0
-redis==5.0.1
+redis==4.5.5
 fastapi-cache2[redis]==0.2.1
 opentelemetry-api
 opentelemetry-sdk
