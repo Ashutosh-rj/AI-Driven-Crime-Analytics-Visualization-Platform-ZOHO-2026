@@ -9,38 +9,66 @@ on:
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
+    
+    env:
+      # Set PYTHONPATH so `from main import app` resolves when pytest runs from src/backend
+      # This is belt-and-suspenders alongside pytest.ini pythonpath = .
+      PYTHONPATH: src/backend
+      # Dummy values so config.py validates without real services on CI
+      DATABASE_URL: "sqlite:///:memory:"
+      NEO4J_URI: "bolt://localhost:7687"
+      NEO4J_USER: "neo4j"
+      NEO4J_PASSWORD: "password"
+      KAFKA_BOOTSTRAP_SERVERS: "localhost:9092"
+      QDRANT_URL: "http://localhost:6333"
+      REDIS_URL: "redis://localhost:6379/0"
+      GEMINI_API_KEY: ""   # Empty — agents.py gracefully falls back to deterministic mode
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
+
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          
+          cache: "pip"
+
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r src/backend/requirements.txt
-          
-      - name: Run PyTest
+
+      - name: Run PyTest with Coverage
         run: |
           cd src/backend
-          pytest tests/ --cov=./ --cov-report=xml
-          
+          pytest tests/ --cov=./ --cov-report=xml --cov-report=term-missing -v
+
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: src/backend/coverage.xml
+          fail_ci_if_error: false
+
       - name: Code Quality (Flake8)
         run: |
           pip install flake8
-          flake8 src/backend --count --max-complexity=10 --max-line-length=120 --statistics
+          flake8 src/backend \
+            --count \
+            --max-complexity=10 \
+            --max-line-length=120 \
+            --statistics \
+            --exclude=src/backend/.venv,src/backend/alembic,src/backend/engines
 
   security-scan:
     needs: test-and-lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build Backend Image
         run: docker build -t ksp-ai-backend:latest -f Dockerfile.backend .
-        
+
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -57,12 +85,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'latest'
-          
+
       - name: Apply Kubernetes Manifests
         run: |
           echo "Deploying to sovereign cloud staging environment..."

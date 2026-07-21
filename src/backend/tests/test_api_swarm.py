@@ -1,11 +1,13 @@
 def test_execute_swarm_query(client, monkeypatch):
-    # Mock the swarm_graph.invoke call to avoid actual LLM/Agent execution during tests
+    # Mock the swarm_graph.invoke call to avoid actual LLM/DB execution during tests
     class MockSwarmGraph:
         def invoke(self, state):
             state["trace"] = [{"agent": "SQLAgent", "action": "SELECT count(*) FROM cases"}]
+            # Must include all fields added to AgentState to avoid KeyError
+            state["final_report"] = "SUBJECT: Test Brief\nFINDINGS:\n• Test finding.\nRECOMMENDED ACTION: Test action."
+            state["grounding_score"] = 0.96
             return state
-            
-    # Apply monkeypatch to the specific module where swarm_graph is imported/used
+
     monkeypatch.setattr("api.routes.swarm.swarm_graph", MockSwarmGraph())
 
     payload = {
@@ -25,6 +27,9 @@ def test_execute_swarm_query(client, monkeypatch):
     assert "reasoningTrace" in swarm_data
     assert len(swarm_data["reasoningTrace"]) > 0
     assert swarm_data["reasoningTrace"][0]["agent"] == "SQLAgent"
+    # Verify new fields added to swarm response
+    assert "groundingScore" in swarm_data
+    assert "finalReport" in swarm_data
 
 def test_execute_swarm_query_unauthorized(client, monkeypatch):
     from main import app

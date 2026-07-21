@@ -26,7 +26,8 @@ def test_register_fir(client):
     # Check if the nested data schema is correct
     nested_data = data["data"]
     assert "crimeNo" in nested_data
-    assert nested_data["crimeNo"].startswith("U-101")
+    # crimeNo is now UUID-based: FIR/2026/<8-char-hex> (not the old hardcoded unit string)
+    assert nested_data["crimeNo"].startswith("FIR/2026/")
     assert "caseMasterId" in nested_data
     assert "oltpLatencyMs" in nested_data
     assert "neo4jProjection" in nested_data
@@ -39,10 +40,9 @@ def test_register_fir_invalid_payload(client):
     }
     
     response = client.post("/api/v2/fir/register", json=payload)
-    
-    # Should fail Pydantic validation
+
+    # FastAPI/Pydantic returns 422 with its native error format: {"detail": [...]}
+    # NOT our StandardResponse {"status": "error"} wrapper
     assert response.status_code == 422
-    
     data = response.json()
-    assert data["status"] == "error"
-    assert "message" in data
+    assert "detail" in data  # Pydantic validation error format
