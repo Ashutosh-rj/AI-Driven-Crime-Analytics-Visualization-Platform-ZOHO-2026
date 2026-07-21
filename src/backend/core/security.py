@@ -1,6 +1,7 @@
 from fastapi import HTTPException, Security, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
+import jwt
+from jwt.exceptions import PyJWTError as JWTError
 import requests
 from functools import lru_cache
 from .config import get_settings
@@ -37,21 +38,16 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Security(securi
         rsa_key = {}
         for key in jwks.get("keys", []):
             if key["kid"] == header.get("kid"):
-                rsa_key = {
-                    "kty": key["kty"],
-                    "kid": key["kid"],
-                    "use": key["use"],
-                    "n": key["n"],
-                    "e": key["e"]
-                }
+                rsa_key = key
                 break
         
         if not rsa_key:
             raise HTTPException(status_code=401, detail="Invalid token signature")
             
+        public_key = jwt.algorithms.RSAAlgorithm.from_jwk(rsa_key)
         payload = jwt.decode(
             token,
-            rsa_key,
+            public_key,
             algorithms=["RS256"],
             audience="account"  # Validate audience based on Keycloak setup
         )
