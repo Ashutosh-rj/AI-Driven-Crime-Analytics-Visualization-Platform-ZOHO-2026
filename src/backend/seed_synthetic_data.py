@@ -1,7 +1,6 @@
 import os
 import random
 from datetime import datetime, timedelta
-import json
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from geoalchemy2 import Geometry
@@ -51,7 +50,7 @@ def seed_database():
         with engine.connect() as conn:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
             conn.commit()
-    except Exception as e:
+    except Exception:
         pass
 
     Base.metadata.create_all(bind=engine)
@@ -65,7 +64,6 @@ def seed_database():
     print("Seeding synthetic database...")
     
     # Generate 100 cases
-    districts = ["Bengaluru South", "Bengaluru North", "Bengaluru Central", "Mysuru", "Hubballi"]
     acts = [("BNS", "Sec 305", "Theft in dwelling house."), 
             ("NDPS", "Sec 21(b)", "Possession of contraband."), 
             ("BNS", "Sec 111", "Organized crime syndicate.")]

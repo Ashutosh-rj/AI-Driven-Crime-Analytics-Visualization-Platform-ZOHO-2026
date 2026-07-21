@@ -17,7 +17,7 @@ def get_keycloak_public_key():
         response = requests.get(jwks_url, timeout=5)
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException:
         # Return None instead of throwing 503 so websocket doesn't crash
         return None
 

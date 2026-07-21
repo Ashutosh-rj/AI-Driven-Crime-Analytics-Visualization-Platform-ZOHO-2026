@@ -1,6 +1,5 @@
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-import os
 from .config import get_settings
 import logging
 

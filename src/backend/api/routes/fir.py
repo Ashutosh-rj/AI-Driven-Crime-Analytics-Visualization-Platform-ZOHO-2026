@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from core.database import get_db, execute_cypher
-from core.security import verify_jwt_token, RoleChecker
+from core.security import RoleChecker
 from api.schemas import FIRRegistrationRequest, FIRRegistrationData, StandardResponse
 from repositories.fir_repository import FIRRepository
 from services.kafka_service import get_kafka_producer
@@ -43,12 +43,12 @@ async def register_fir(
         db.refresh(new_case)
         
         # Write to Neo4j Graph
-        cypher_query = """
+        neo4j_query = """
             MERGE (c:Case {id: $crime_no})
             MERGE (p:Person {name: $accused_name})
             MERGE (p)-[:ACCUSED_IN]->(c)
         """
-        neo_status = execute_cypher(cypher_query, {"crime_no": new_case.crime_no, "accused_name": req_body.accused})
+        execute_cypher(neo4j_query, {"crime_no": new_case.crime_no, "accused_name": req_body.accused})
 
         # Publish Event to Kafka
         event_id = f"EVT-{1000 + new_case.id}"

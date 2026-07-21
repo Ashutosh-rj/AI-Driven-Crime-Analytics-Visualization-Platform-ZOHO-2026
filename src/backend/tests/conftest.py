@@ -111,14 +111,6 @@ _make_module("sentence_transformers", SentenceTransformer=MagicMock())
 _make_module("google")
 _make_module("google.generativeai", GenerativeModel=MagicMock(), configure=MagicMock())
 
-# ── langgraph ─────────────────────────────────────────────────────────────────
-# If langgraph isn't installed in CI, mock it too.
-try:
-    import langgraph
-except ImportError:
-    _lg = _make_module("langgraph")
-    _lg_graph = _make_module("langgraph.graph", StateGraph=MagicMock(), END="__end__")
-
 # ── neo4j ─────────────────────────────────────────────────────────────────────
 # neo4j is in requirements.txt, but its import may trigger driver version checks.
 # The actual connection (verify_connectivity) only runs in app lifespan,

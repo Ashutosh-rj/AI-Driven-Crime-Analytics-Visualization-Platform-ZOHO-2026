@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 import asyncio
 from sqlalchemy.orm import Session
 from core.database import get_db, execute_cypher
-from core.security import verify_jwt_token, RoleChecker
+from core.security import RoleChecker
 from api.schemas import SwarmQueryRequest, SwarmQueryData, StandardResponse
 from models.domain import CaseMaster, Accused
 from agents import swarm_graph

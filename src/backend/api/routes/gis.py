@@ -37,7 +37,7 @@ async def get_hotspots(request: Request, db: Session = Depends(get_db)):
             )
             if resp.status_code == 200:
                 ml_hotspots = resp.json().get("hotspots", [])
-    except Exception as e:
+    except Exception:
         # Fallback empty list if ML service is down
         pass
     

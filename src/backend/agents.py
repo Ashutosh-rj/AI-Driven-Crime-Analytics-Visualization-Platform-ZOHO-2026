@@ -2,7 +2,7 @@ import os
 import logging
 import json
 import threading
-from typing import TypedDict, Annotated, List, Dict, Any, Optional
+from typing import List, Dict, Any
 from langgraph.graph import StateGraph, END
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct

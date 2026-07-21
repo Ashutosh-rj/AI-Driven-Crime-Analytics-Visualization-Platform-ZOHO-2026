@@ -129,7 +129,6 @@ async def start_kafka_consumer():
     consumer_task = asyncio.create_task(kafka_consumer_loop())
 
 async def stop_kafka_consumer():
-    global consumer_task
     if consumer_task:
         consumer_task.cancel()
         try:

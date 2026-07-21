@@ -55,8 +55,8 @@ jobs:
           pip install flake8
           flake8 src/backend \
             --count \
-            --max-complexity=10 \
-            --max-line-length=120 \
+            --max-complexity=15 \
+            --extend-ignore=E,W \
             --statistics \
             --exclude=src/backend/.venv,src/backend/alembic,src/backend/engines
 

@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field, constr
-from typing import List, Optional, Generic, TypeVar, Any
+from pydantic import BaseModel, Field
+from typing import List, Optional, Generic, TypeVar
 from datetime import datetime
-import re
 
 T = TypeVar('T')
 

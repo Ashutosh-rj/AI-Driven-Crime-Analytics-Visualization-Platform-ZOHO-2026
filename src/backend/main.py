@@ -14,13 +14,12 @@ from core.exceptions import (
 )
 from contextlib import asynccontextmanager
 import asyncio
-import logging
 from redis import asyncio as aioredis
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 
 from core.config import get_settings
-from core.database import Base, engine, Neo4jConnection
+from core.database import Neo4jConnection
 from core.logging import setup_logging
 from api.routes import api_router
 from services.kafka_service import start_kafka_consumer, stop_kafka_consumer
