@@ -1,6 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from core.security import get_keycloak_public_key
-from jose import jwt, JWTError
+import jwt
+from jwt.exceptions import PyJWTError as JWTError
 from services.kafka_service import active_websockets
 import logging
 
@@ -22,14 +23,15 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
             rsa_key = {}
             for key in jwks.get("keys", []):
                 if key["kid"] == header.get("kid"):
-                    rsa_key = {"kty": key["kty"], "kid": key["kid"], "use": key["use"], "n": key["n"], "e": key["e"]}
+                    rsa_key = key
                     break
             
             if not rsa_key:
                 await websocket.close(code=1008)
                 return
                 
-            jwt.decode(token, rsa_key, algorithms=["RS256"], audience="account")
+            public_key = jwt.algorithms.RSAAlgorithm.from_jwk(rsa_key)
+            jwt.decode(token, public_key, algorithms=["RS256"], audience="account")
         except JWTError as e:
             logger.warning(f"WebSocket auth failed: {e}")
             await websocket.close(code=1008)
