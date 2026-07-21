@@ -70,7 +70,7 @@ jobs:
         run: docker build -t ksp-ai-backend:latest -f Dockerfile.backend .
 
       - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: 'ksp-ai-backend:latest'
           format: 'table'
@@ -78,6 +78,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+          scanners: 'vuln'
 
   deploy-to-staging:
     needs: security-scan
