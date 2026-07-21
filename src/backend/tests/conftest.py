@@ -55,9 +55,14 @@ _make_module("fastapi_cache.backends.memcached")
 _make_module("fastapi_cache.backends.inmemory")
 
 # ── redis (async) ─────────────────────────────────────────────────────────────
-_redis = _make_module("redis")
-_redis_async = _make_module("redis.asyncio", from_url=MagicMock(return_value=AsyncMock()))
+# slowapi's `limits` library reads redis.__version__ and requires >= 3.0.
+# Without __version__, limits reports "0.0.0" and rejects our mock.
+_redis = _make_module("redis", __version__="4.6.0", VERSION=(4, 6, 0))
+_redis_async = _make_module("redis.asyncio",
+                            from_url=MagicMock(return_value=AsyncMock()),
+                            __version__="4.6.0")
 _redis.asyncio = _redis_async
+_make_module("redis.exceptions", ConnectionError=ConnectionError, TimeoutError=TimeoutError)
 
 # ── prometheus_fastapi_instrumentator ────────────────────────────────────────
 _instr = MagicMock()
@@ -103,6 +108,17 @@ try:
 except ImportError:
     _lg = _make_module("langgraph")
     _lg_graph = _make_module("langgraph.graph", StateGraph=MagicMock(), END="__end__")
+
+# ── neo4j ─────────────────────────────────────────────────────────────────────
+# neo4j is in requirements.txt, but its import may trigger driver version checks.
+# The actual connection (verify_connectivity) only runs in app lifespan,
+# which TestClient skips. We mock at import level as belt-and-suspenders.
+try:
+    import neo4j  # noqa: F401 — confirm it's installed
+except ImportError:
+    _neo4j_mock = MagicMock()
+    _neo4j_mock.GraphDatabase.driver.return_value = MagicMock()
+    _make_module("neo4j", GraphDatabase=_neo4j_mock.GraphDatabase)
 
 # =============================================================================
 # STEP 2 — Now it's safe to import the app

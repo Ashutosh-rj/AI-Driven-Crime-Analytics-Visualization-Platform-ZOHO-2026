@@ -7,16 +7,27 @@ from .config import get_settings
 settings = get_settings()
 logger = logging.getLogger("api")
 
-# PostgreSQL Engine setup
-# Enterprise connection pooling, timeout, and recycle limits
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_size=settings.DB_POOL_SIZE,
-    max_overflow=settings.DB_MAX_OVERFLOW,
-    pool_timeout=settings.DB_POOL_TIMEOUT,
-    pool_recycle=1800, # Recycle connections every 30 mins to avoid idle timeouts
-    pool_pre_ping=True # Verify connection before usage
-)
+# PostgreSQL Engine setup — dialect-aware pool configuration.
+# SQLite (used in tests) does not support max_overflow, pool_timeout, etc.
+# We detect the dialect and apply PG-specific kwargs only when appropriate.
+_is_sqlite = settings.DATABASE_URL.startswith("sqlite")
+
+if _is_sqlite:
+    from sqlalchemy.pool import StaticPool as _StaticPool
+    engine = create_engine(
+        settings.DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=_StaticPool,
+    )
+else:
+    engine = create_engine(
+        settings.DATABASE_URL,
+        pool_size=settings.DB_POOL_SIZE,
+        max_overflow=settings.DB_MAX_OVERFLOW,
+        pool_timeout=settings.DB_POOL_TIMEOUT,
+        pool_recycle=1800,   # Recycle connections every 30 mins
+        pool_pre_ping=True,  # Verify connection before usage
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
