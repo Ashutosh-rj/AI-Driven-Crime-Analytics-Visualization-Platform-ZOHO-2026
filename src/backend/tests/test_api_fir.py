@@ -41,8 +41,10 @@ def test_register_fir_invalid_payload(client):
     
     response = client.post("/api/v2/fir/register", json=payload)
 
-    # FastAPI/Pydantic returns 422 with its native error format: {"detail": [...]}
-    # NOT our StandardResponse {"status": "error"} wrapper
+    # The app's custom validation_exception_handler (core/exceptions.py) wraps
+    # Pydantic 422 errors in our StandardResponse format, NOT FastAPI's default.
     assert response.status_code == 422
     data = response.json()
-    assert "detail" in data  # Pydantic validation error format
+    assert data["status"] == "error"
+    assert data["message"] == "Invalid request parameters"
+    assert "errors" in data["data"]

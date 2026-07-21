@@ -85,7 +85,17 @@ _make_module("opentelemetry.exporter.otlp.proto")
 _make_module("opentelemetry.exporter.otlp.proto.grpc")
 
 # ── confluent_kafka ───────────────────────────────────────────────────────────
-_make_module("confluent_kafka", Producer=MagicMock(), Consumer=MagicMock())
+# Consumer.poll() MUST return None to satisfy the `if msg is None: continue`
+# guard in kafka_consumer_loop. A MagicMock is truthy, so msg.error() would
+# also be truthy, causing infinite error-log spam during tests.
+_mock_consumer_instance = MagicMock()
+_mock_consumer_instance.poll.return_value = None   # <-- critical
+_mock_consumer_class = MagicMock(return_value=_mock_consumer_instance)
+_mock_producer_instance = MagicMock()
+_mock_producer_class = MagicMock(return_value=_mock_producer_instance)
+_make_module("confluent_kafka",
+             Producer=_mock_producer_class,
+             Consumer=_mock_consumer_class)
 
 # ── qdrant_client ─────────────────────────────────────────────────────────────
 _make_module("qdrant_client", QdrantClient=MagicMock())
@@ -193,6 +203,15 @@ def client(db_session, monkeypatch):
         def poll(self, timeout): pass
 
     monkeypatch.setattr("services.kafka_service.get_kafka_producer", lambda: MockProducer())
+
+    # MUST patch kafka lifecycle BEFORE TestClient.__enter__ fires the lifespan.
+    # lifespan calls `await start_kafka_consumer()` which spawns an infinite loop.
+    # Patching after TestClient init is too late.
+    async def _noop(): pass
+    monkeypatch.setattr("services.kafka_service.start_kafka_consumer", _noop)
+    monkeypatch.setattr("services.kafka_service.stop_kafka_consumer", _noop)
+    monkeypatch.setattr("main.start_kafka_consumer", _noop)
+    monkeypatch.setattr("main.stop_kafka_consumer", _noop)
 
     with TestClient(app) as test_client:
         yield test_client
