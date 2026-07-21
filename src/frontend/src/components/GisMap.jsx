@@ -19,12 +19,19 @@ const stationIcon = new L.DivIcon({
 
 export default function GisMap({ liveEvents = [] }) {
   const [hotspots, setHotspots] = useState([])
+  const [hotspotStatus, setHotspotStatus] = useState('loading') // 'loading' | 'ok' | 'offline'
 
   useEffect(() => {
     fetch('http://localhost:8000/api/v2/gis/hotspots')
       .then(res => res.json())
-      .then(responseJson => setHotspots(responseJson.data?.features || []))
-      .catch(err => console.error(err))
+      .then(responseJson => {
+        setHotspots(responseJson.data?.features || [])
+        setHotspotStatus('ok')
+      })
+      .catch(err => {
+        console.error(err)
+        setHotspotStatus('offline')
+      })
   }, [])
 
   const eventIcon = new L.DivIcon({
@@ -38,10 +45,10 @@ export default function GisMap({ liveEvents = [] }) {
       <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-[22px] font-bold text-text-primary tracking-tight">Command GIS & Spatiotemporal Heatmap</h2>
-          <p className="text-sm text-text-muted mt-1">Live ConvLSTM Hotspot Risk Buffers & Real-Time Kafka Events</p>
+          <p className="text-sm text-text-muted mt-1">DBSCAN Spatial Clustering · PostGIS Hotspot Buffers · Real-Time Kafka Events</p>
         </div>
         <span className="inline-flex items-center gap-1.5 bg-accent-blue/10 text-accent-blue px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wider border border-accent-blue/20 uppercase">
-          PostGIS Spatial Engine
+          DBSCAN Spatial Clustering
         </span>
       </div>
       
@@ -89,6 +96,16 @@ export default function GisMap({ liveEvents = [] }) {
              )
           ))}
         </MapContainer>
+        {/* Offline overlay — shown only when backend is unreachable */}
+        {hotspotStatus === 'offline' && (
+          <div className="absolute inset-0 z-[500] flex items-center justify-center bg-background/70 backdrop-blur-sm">
+            <div className="bg-surface border border-border-subtle rounded-2xl px-8 py-6 text-center shadow-xl max-w-xs">
+              <div className="text-3xl mb-3">🗺️</div>
+              <h3 className="font-bold text-text-primary mb-1">Backend Offline</h3>
+              <p className="text-sm text-text-secondary">Map tiles are live. Start the backend to load crime hotspot data.</p>
+            </div>
+          </div>
+        )}
       </div>
       <style>{`
         @keyframes pulse {

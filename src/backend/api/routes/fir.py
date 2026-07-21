@@ -57,7 +57,10 @@ async def register_fir(
             kafka_payload = {
                 "event_id": event_id,
                 "event_type": "FIRRegistered",
-                "case_no": new_case.crime_no
+                "case_no": new_case.crime_no,
+                # Include coordinates so GIS map can plot live events
+                "lat": req_body.latitude,
+                "lng": req_body.longitude
             }
             producer.produce('crime.events', value=json.dumps(kafka_payload))
             producer.poll(0)
@@ -67,7 +70,7 @@ async def register_fir(
             status="success",
             message="FIR Registered Successfully",
             data=FIRRegistrationData(
-                crimeNo=req_body.unit + "/2026",
+                crimeNo=new_case.crime_no,  # BUG-01 fix: use actual generated crime number
                 caseMasterId=new_case.id,
                 oltpLatencyMs=int((time.time() - start_time) * 1000),
                 neo4jProjection=f"MATCH (p:Person {{name: '{req_body.accused}'}})-[:ACCUSED_IN]->(c:Case {{id: '{new_case.crime_no}'}}) RETURN c"

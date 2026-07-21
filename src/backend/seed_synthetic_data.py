@@ -33,6 +33,15 @@ class Accused(Base):
     age = Column(Integer)
     arrested = Column(Boolean)
 
+class EventsLedger(Base):
+    __tablename__ = "EventsLedger"
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(String, unique=True)
+    topic = Column(String)
+    event_type = Column(String)
+    case_no = Column(String)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")

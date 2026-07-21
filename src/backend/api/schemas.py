@@ -15,9 +15,9 @@ class FIRRegistrationRequest(BaseModel):
     unit: str = Field(..., min_length=2, max_length=100)
     act: str = Field(..., min_length=2, max_length=200)
     section: str = Field(..., min_length=1, max_length=50)
-    victim: str = Field(..., min_length=2, max_length=150)
+    victim: str = Field(default="Unknown Victim", min_length=2, max_length=150)
     accused: str = Field(..., min_length=2, max_length=150)
-    briefFacts: str = Field(..., min_length=10, max_length=2000)
+    briefFacts: str = Field(default="Under Investigation", min_length=2, max_length=2000)
     latitude: float = Field(default=12.9716, ge=-90, le=90)
     longitude: float = Field(default=77.5946, ge=-180, le=180)
 
@@ -36,6 +36,7 @@ class SwarmQueryData(BaseModel):
     rbacRole: str
     groundingScore: float
     hallucinationCount: int
+    finalReport: Optional[str] = None   # Gemini-synthesized intelligence brief
     reasoningTrace: List[dict]
     citations: List[str]
 

@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # Qdrant
     QDRANT_URL: str = Field(default="http://localhost:6333")
 
+    # Gemini AI (Google Generative AI)
+    # Set this in .env: GEMINI_API_KEY=your_key_here
+    # Get a free key at: https://aistudio.google.com/app/apikey
+    GEMINI_API_KEY: str = Field(default="")
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 @lru_cache()

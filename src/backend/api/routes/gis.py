@@ -42,7 +42,7 @@ async def get_hotspots(request: Request, db: Session = Depends(get_db)):
         pass
     
     features = ml_hotspots + [
-        {"type": "PatrolSector", "name": "Malleshwaram Hub", "coords": [13.0100, 77.5500], "radiusMeters": 1000, "responseOptPct": -38}
+        {"type": "PatrolSector", "name": "Malleshwaram Hub", "coords": [13.0100, 77.5500], "radiusMeters": 1000, "responseOptPct": 38}
     ]
             
     return StandardResponse(

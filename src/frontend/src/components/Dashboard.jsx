@@ -1,8 +1,22 @@
 export default function Dashboard({ stats, liveEvents = [] }) {
   if (!stats) return (
-    <div className="flex flex-col items-center justify-center min-h-[500px] text-text-muted space-y-4 animate-fade-in">
-      <div className="w-10 h-10 border-4 border-accent-emerald/20 border-t-accent-emerald rounded-full animate-spin"></div>
-      <div className="text-sm font-semibold tracking-wider uppercase">Connecting to Enterprise Medallion Lakehouse...</div>
+    <div className="flex flex-col items-center justify-center min-h-[500px] w-full animate-fade-in" aria-busy="true" aria-label="Loading dashboard data">
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-surface border border-border-subtle shadow-sm mb-4">
+          <svg className="w-5 h-5 animate-spin text-text-muted" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          <span className="text-sm font-medium text-text-secondary">Connecting to backend...</span>
+        </div>
+        <p className="text-xs text-text-muted">If this persists, start the backend server and refresh.</p>
+      </div>
+      <div className="w-full max-w-4xl space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[1,2,3,4].map(i => <div key={i} className="h-32 bg-surface/80 rounded-2xl animate-pulse border border-border-subtle"></div>)}
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="xl:col-span-2 h-96 bg-surface/80 rounded-2xl animate-pulse border border-border-subtle"></div>
+          <div className="h-96 bg-surface/80 rounded-2xl animate-pulse border border-border-subtle"></div>
+        </div>
+      </div>
     </div>
   )
 
@@ -25,20 +39,20 @@ export default function Dashboard({ stats, liveEvents = [] }) {
               <p className="text-sm text-text-muted mt-1">Aggregated District Performance SLAs</p>
             </div>
             <span className="inline-flex items-center gap-1.5 bg-accent-slate/10 text-accent-slate px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wider border border-accent-slate/20 uppercase">
-              Databricks Medallion Gold
+              PostgreSQL + PostGIS Analytics
             </span>
           </div>
           
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border-subtle text-text-secondary text-[13px] uppercase tracking-wider">
-                  <th className="py-4 font-semibold px-2">District / Range</th>
-                  <th className="py-4 font-semibold">Active FIRs</th>
-                  <th className="py-4 font-semibold">Clearance Rate</th>
-                  <th className="py-4 font-semibold">AI Swarm Usage</th>
-                  <th className="py-4 font-semibold">Hotspot Accuracy</th>
-                  <th className="py-4 font-semibold text-right px-2">SLA Status</th>
+                <tr className="border-b border-border-strong text-text-secondary text-[12px] font-semibold uppercase tracking-wider bg-surface/30">
+                  <th className="py-4 px-4" scope="col">District / Range</th>
+                  <th className="py-4 px-4" scope="col">Active FIRs</th>
+                  <th className="py-4 px-4" scope="col">Clearance Rate</th>
+                  <th className="py-4 px-4" scope="col">AI Swarm Usage</th>
+                  <th className="py-4 px-4" scope="col">Hotspot Accuracy</th>
+                  <th className="py-4 px-4 text-right" scope="col">SLA Status</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
@@ -99,13 +113,13 @@ function StatCard({ label, value, delta }) {
 function TableRow({ dist, active, clear, swarm, acc }) {
   return (
     <tr className="border-b border-border-subtle hover:bg-surface/50 transition-colors duration-200 group">
-      <td className="py-4 font-semibold text-text-primary px-2">{dist}</td>
-      <td className="py-4 font-mono text-[13px]">{active}</td>
-      <td className="py-4 font-bold text-accent-emerald">{clear}</td>
-      <td className="py-4 text-text-secondary text-sm">{swarm}</td>
-      <td className="py-4 text-text-secondary text-sm">{acc}</td>
-      <td className="py-4 text-right px-2">
-        <span className="inline-flex items-center justify-center bg-accent-emerald/10 text-accent-emerald px-2.5 py-1 rounded border border-accent-emerald/20 text-[11px] font-bold tracking-wider">
+      <td className="py-4 px-4 font-semibold text-text-primary">{dist}</td>
+      <td className="py-4 px-4 font-mono text-[13px] text-text-secondary">{active}</td>
+      <td className="py-4 px-4 font-bold text-accent-emerald">{clear}</td>
+      <td className="py-4 px-4 text-text-secondary text-sm">{swarm}</td>
+      <td className="py-4 px-4 text-text-secondary text-sm">{acc}</td>
+      <td className="py-4 px-4 text-right">
+        <span className="inline-flex items-center justify-center bg-accent-emerald text-background px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase shadow-sm">
           COMPLIANT
         </span>
       </td>

@@ -9,6 +9,8 @@ router = APIRouter(prefix="/api/v2/ws", tags=["WebSockets"])
 
 @router.websocket("/events")
 async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
+    await websocket.accept()
+    
     if not token:
         await websocket.close(code=1008)
         return
@@ -37,7 +39,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
         # But for this environment, if JWKS fetch failed, we might reject.
         pass
 
-    await websocket.accept()
     active_websockets.append(websocket)
     try:
         while True:

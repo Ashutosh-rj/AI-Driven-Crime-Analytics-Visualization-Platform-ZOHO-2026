@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Shield, Map as MapIcon, Users, FileText, Activity, Sun, Moon } from 'lucide-react'
 import LandingPage from './components/LandingPage'
 import StationUI from './components/StationUI'
@@ -30,9 +30,22 @@ function App() {
     }
   }, [isDark])
 
+  // Debounced stats fetcher — at most once every 5 seconds
+  const statsDebounceRef = useRef(null)
+  const fetchStats = useCallback(() => {
+    if (statsDebounceRef.current) return
+    statsDebounceRef.current = setTimeout(() => {
+      statsDebounceRef.current = null
+      fetch('http://localhost:8000/api/v2/stats', { headers: { 'Authorization': 'Bearer dummy_token_dev_fallback' }})
+        .then(res => res.json())
+        .then(json => setStats(json.data.metrics))
+        .catch(err => console.error("Stats fetch error:", err))
+    }, 5000)
+  }, [])
+
   useEffect(() => {
     // Fetch initial stats from FastAPI backend
-    fetch('http://localhost:8000/api/v2/stats')
+    fetch('http://localhost:8000/api/v2/stats', { headers: { 'Authorization': 'Bearer dummy_token_dev_fallback' }})
       .then(res => res.json())
       .then(json => setStats(json.data.metrics))
       .catch(err => console.error("Backend not running or CORS issue:", err))
@@ -40,46 +53,52 @@ function App() {
     let ws = null;
     let reconnectTimeout = null;
     let backoff = 1000;
+    let retries = 0;
+    const MAX_RETRIES = 10;
 
     const connectWS = () => {
+      if (retries >= MAX_RETRIES) {
+        console.warn(`WebSocket: max retries (${MAX_RETRIES}) reached. Giving up.`)
+        return
+      }
       // Connect to live WebSocket for Kafka events with token
       ws = new WebSocket('ws://localhost:8000/api/v2/ws/events?token=dummy_token_dev_fallback')
       
       ws.onopen = () => {
-        console.log("WebSocket connected.");
-        backoff = 1000; // Reset backoff on successful connection
+        console.log("WebSocket connected.")
+        backoff = 1000 // Reset backoff on successful connection
+        retries = 0    // Reset retry counter on success
       }
       
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data)
-        console.log("Live Event Received:", data)
         setLiveEvents(prev => [data, ...prev].slice(0, 10)) // Keep last 10
-        // Also trigger a stats refresh
-        fetch('http://localhost:8000/api/v2/stats')
-          .then(res => res.json())
-          .then(json => setStats(json.data.metrics))
-          .catch(err => console.error(err))
+        // Debounced stats refresh — won't fire more than once per 5s
+        fetchStats()
       }
       
       ws.onclose = () => {
-        console.log(`WebSocket closed. Reconnecting in ${backoff}ms...`);
-        reconnectTimeout = setTimeout(connectWS, backoff);
-        backoff = Math.min(backoff * 2, 30000); // Exponential backoff up to 30s
+        retries++
+        console.log(`WebSocket closed. Attempt ${retries}/${MAX_RETRIES}. Reconnecting in ${backoff}ms...`)
+        reconnectTimeout = setTimeout(connectWS, backoff)
+        backoff = Math.min(backoff * 2, 30000) // Exponential backoff up to 30s
       }
       
       ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        ws.close();
+        console.error("WebSocket error:", error)
+        ws.close()
       }
-    };
+    }
     
-    connectWS();
+    connectWS()
     
     return () => {
-      if (reconnectTimeout) clearTimeout(reconnectTimeout);
-      if (ws) ws.close();
+      retries = MAX_RETRIES // Prevent reconnect on unmount
+      if (reconnectTimeout) clearTimeout(reconnectTimeout)
+      if (statsDebounceRef.current) clearTimeout(statsDebounceRef.current)
+      if (ws) ws.close()
     }
-  }, [])
+  }, [fetchStats])
 
   const toggleTheme = () => setIsDark(!isDark)
 
@@ -92,7 +111,7 @@ function App() {
       {/* Dynamic Background Gradients */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden flex justify-center">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-accent-emerald/10 blur-[120px] rounded-full mix-blend-screen opacity-50 dark:opacity-20 animate-pulse" style={{ animationDuration: '8s' }}></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-accent-blue/10 blur-[100px] rounded-full mix-blend-screen opacity-50 dark:opacity-20 animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }}></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-slate-500/10 blur-[100px] rounded-full mix-blend-screen opacity-50 dark:opacity-20 animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }}></div>
       </div>
 
       {/* Header */}
@@ -114,14 +133,16 @@ function App() {
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent-emerald shadow-[0_0_8px_var(--color-accent-emerald)]"></span>
               </div>
               <select 
+                id="rbac-role-select"
+                aria-label="Select User Role"
                 className="bg-transparent border-none text-[13px] font-semibold text-text-primary focus:ring-0 cursor-pointer pr-3 outline-none appearance-none"
                 value={rbacRole}
                 onChange={(e) => setRbacRole(e.target.value)}
               >
-                <option value="P09">DGP Karnataka (ROOT TIER 0)</option>
-                <option value="P03">District SP (TIER 2)</option>
-                <option value="P02">SHO Inspector (TIER 3)</option>
-                <option value="P01">Beat Constable (TIER 4)</option>
+                <option className="bg-surface text-text-primary" value="P09">DGP Karnataka (ROOT TIER 0)</option>
+                <option className="bg-surface text-text-primary" value="P03">District SP (TIER 2)</option>
+                <option className="bg-surface text-text-primary" value="P02">SHO Inspector (TIER 3)</option>
+                <option className="bg-surface text-text-primary" value="P01">Beat Constable (TIER 4)</option>
               </select>
             </div>
             
@@ -130,7 +151,7 @@ function App() {
               className="p-2.5 rounded-xl bg-surface/50 hover:bg-surface text-text-secondary hover:text-text-primary transition-all duration-200 border border-border-subtle hover:border-border-strong hover:shadow-sm"
               aria-label="Toggle Theme"
             >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              {isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
             </button>
           </div>
         </div>
@@ -145,11 +166,12 @@ function App() {
       </header>
 
       {/* Main Content Area */}
+      {/* GisMap is always mounted (just hidden) to prevent Leaflet re-initialization on tab switch */}
       <main className="flex-1 container mx-auto p-6 md:p-8 lg:p-10 z-10 animate-fade-in relative">
-        {activeTab === 'station' && <StationUI rbacRole={rbacRole} liveEvents={liveEvents} />}
-        {activeTab === 'swarm' && <AgentSwarm rbacRole={rbacRole} />}
-        {activeTab === 'gis' && <GisMap liveEvents={liveEvents} />}
-        {activeTab === 'dashboard' && <Dashboard stats={stats} liveEvents={liveEvents} />}
+        <div className={activeTab === 'station' ? 'block' : 'hidden'}><StationUI rbacRole={rbacRole} liveEvents={liveEvents} /></div>
+        <div className={activeTab === 'swarm' ? 'block' : 'hidden'}><AgentSwarm rbacRole={rbacRole} /></div>
+        <div className={activeTab === 'gis' ? 'block' : 'hidden'}><GisMap liveEvents={liveEvents} /></div>
+        <div className={activeTab === 'dashboard' ? 'block' : 'hidden'}><Dashboard stats={stats} liveEvents={liveEvents} /></div>
       </main>
     </div>
   )
@@ -159,6 +181,8 @@ function TabButton({ active, onClick, icon, label }) {
   return (
     <button 
       onClick={onClick}
+      aria-selected={active}
+      role="tab"
       className={`px-4 py-3 flex items-center gap-2 text-[14px] font-semibold transition-all duration-300 rounded-t-xl relative overflow-hidden group ${
         active 
           ? 'text-accent-charcoal dark:text-accent-emerald' 
@@ -167,7 +191,7 @@ function TabButton({ active, onClick, icon, label }) {
     >
       <span className="relative z-10 flex items-center gap-2">{icon} {label}</span>
       {active && (
-        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-accent-charcoal dark:bg-accent-emerald rounded-t-full shadow-[0_-2px_10px_rgba(16,185,129,0.3)] animate-slide-up"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-accent-charcoal dark:bg-accent-emerald rounded-t-full shadow-[0_-2px_10px_rgba(16,185,129,0.3)] animate-slide-up" aria-hidden="true"></div>
       )}
     </button>
   )

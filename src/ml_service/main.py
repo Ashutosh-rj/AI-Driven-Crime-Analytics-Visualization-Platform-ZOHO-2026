@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import numpy as np
 from sklearn.cluster import DBSCAN
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -11,7 +11,7 @@ app = FastAPI(title="KSP AI ML Service", description="Standalone ML pipeline for
 Instrumentator().instrument(app).expose(app)
 
 class CaseRecord(BaseModel):
-    id: str
+    id: Optional[str] = None  # BUG-03 fix: id is optional, gis.py doesn't send it
     lat: float
     lng: float
     crime: str

@@ -1,13 +1,14 @@
 from sqlalchemy.orm import Session
 from models.domain import CaseMaster, Accused, EventsLedger
-import random
+import uuid
 
 class FIRRepository:
     def __init__(self, db: Session):
         self.db = db
 
     def create_case(self, unit: str, act: str, section: str, brief_facts: str, latitude: float, longitude: float) -> CaseMaster:
-        crime_no = f"FIR/2026/01{random.randint(50, 999)}"
+        # UUID-based crime number — collision-safe even under rapid demo use
+        crime_no = f"FIR/2026/{uuid.uuid4().hex[:8].upper()}"
         wkt_location = f"SRID=4326;POINT({longitude} {latitude})"
         
         new_case = CaseMaster(

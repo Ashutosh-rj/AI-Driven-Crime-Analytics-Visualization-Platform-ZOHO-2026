@@ -13,6 +13,7 @@ from core.exceptions import (
     global_exception_handler
 )
 from contextlib import asynccontextmanager
+import asyncio
 import logging
 from redis import asyncio as aioredis
 from fastapi_cache import FastAPICache
@@ -44,7 +45,7 @@ async def lifespan(app: FastAPI):
     
     # 3. Seed Data
     try:
-        seed_database()
+        await asyncio.to_thread(seed_database)
     except Exception as e:
         logger.warning(f"Database seeding failed/skipped: {e}")
 
@@ -105,7 +106,13 @@ app.add_exception_handler(Exception, global_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    # Use specific origins instead of wildcard so credentials work correctly.
+    # Update CORS_ORIGINS env var for production deployment.
+    allow_origins=[
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:4173",  # Vite preview
+        "http://localhost:3000",  # fallback
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

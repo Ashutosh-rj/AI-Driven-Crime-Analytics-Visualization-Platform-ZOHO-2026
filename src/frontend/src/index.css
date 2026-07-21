@@ -17,7 +17,6 @@
   --color-accent-amber: var(--color-accent-amber);
   --color-accent-slate: var(--color-accent-slate);
   --color-accent-gray: var(--color-accent-gray);
-  --color-accent-blue: var(--color-accent-blue);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Geist Mono", "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -46,7 +45,6 @@
     --color-accent-amber: #F59E0B;
     --color-accent-slate: #475569;
     --color-accent-gray: #6B7280;
-    --color-accent-blue: #3B82F6;
   }
 
   .dark {
@@ -67,7 +65,6 @@
     --color-accent-amber: #F59E0B;
     --color-accent-slate: #94A3B8;
     --color-accent-gray: #71717A;
-    --color-accent-blue: #3B82F6;
   }
 
   html, body {
@@ -137,10 +134,10 @@
     @apply text-gray-600 mr-3 select-none;
   }
 
-  .tag-agent { @apply text-emerald-400 font-semibold tracking-wide; text-shadow: 0 0 10px rgba(52, 211, 153, 0.3); }
-  .tag-sql { @apply text-blue-400 font-semibold tracking-wide; text-shadow: 0 0 10px rgba(96, 165, 250, 0.3); }
-  .tag-graph { @apply text-amber-400 font-semibold tracking-wide; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
-  .tag-verify { @apply text-purple-400 font-semibold tracking-wide; text-shadow: 0 0 10px rgba(192, 132, 252, 0.3); }
+  .tag-agent { @apply text-emerald-400 font-semibold tracking-wide; text-shadow: 0 0 8px rgba(16, 185, 129, 0.2); }
+  .tag-sql { @apply text-slate-400 font-semibold tracking-wide; text-shadow: 0 0 8px rgba(148, 163, 184, 0.2); }
+  .tag-graph { @apply text-amber-400 font-semibold tracking-wide; text-shadow: 0 0 8px rgba(245, 158, 11, 0.2); }
+  .tag-verify { @apply text-gray-400 font-semibold tracking-wide; text-shadow: 0 0 8px rgba(156, 163, 175, 0.2); }
 
   /* Utility animations */
   .animate-fade-in {
@@ -148,6 +145,21 @@
   }
   .animate-slide-up {
     animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Fix for native select options in dark mode */
+  option {
+    @apply bg-surface text-text-primary;
+  }
+
+  /* Fix for Chrome autofill white background in dark mode */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px var(--color-bg-secondary) inset !important;
+    -webkit-text-fill-color: var(--color-text-primary) !important;
+    transition: background-color 5000s ease-in-out 0s;
   }
 }
 

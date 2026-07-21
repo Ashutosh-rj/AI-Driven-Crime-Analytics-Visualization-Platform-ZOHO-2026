@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
+import ArchitectureModal from './ArchitectureModal'
 import { 
   Shield, Activity, Lock, Database, Layers, 
   Map as MapIcon, Cpu, Zap, Globe, Server, 
@@ -54,6 +55,7 @@ const BentoCard = ({ title, description, icon: Icon, children, className = "", d
 )
 
 export default function LandingPage({ onLaunch, isDark, toggleTheme }) {
+  const [isArchModalOpen, setIsArchModalOpen] = useState(false)
   const { scrollYProgress } = useScroll()
   const heroOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0])
   const heroY = useTransform(scrollYProgress, [0, 0.1], [0, 50])
@@ -61,10 +63,11 @@ export default function LandingPage({ onLaunch, isDark, toggleTheme }) {
   return (
     <div className="min-h-screen bg-background text-text-primary selection:bg-accent-emerald/30 font-sans overflow-x-hidden">
       
+      <ArchitectureModal isOpen={isArchModalOpen} onClose={() => setIsArchModalOpen(false)} />
       {/* Dynamic Background Elements */}
       <div className="fixed inset-0 z-0 pointer-events-none flex justify-center">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-accent-emerald/5 blur-[120px] rounded-full mix-blend-screen opacity-50"></div>
-        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[60%] bg-blue-500/5 blur-[120px] rounded-full mix-blend-screen opacity-50"></div>
+        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[60%] bg-surface-elevated blur-[120px] rounded-full mix-blend-screen opacity-30"></div>
       </div>
 
       {/* Sticky Navigation */}
@@ -78,7 +81,7 @@ export default function LandingPage({ onLaunch, isDark, toggleTheme }) {
           </div>
           
           <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-text-secondary">
-            <a href="#architecture" className="hover:text-text-primary transition-colors">Architecture</a>
+            <button onClick={() => setIsArchModalOpen(true)} className="hover:text-text-primary transition-colors cursor-pointer">Architecture</button>
             <a href="#capabilities" className="hover:text-text-primary transition-colors">Capabilities</a>
             <a href="#security" className="hover:text-text-primary transition-colors">Security</a>
           </nav>
@@ -86,9 +89,10 @@ export default function LandingPage({ onLaunch, isDark, toggleTheme }) {
           <div className="flex items-center gap-4">
             <button
               onClick={toggleTheme}
+              aria-label="Toggle theme"
               className="p-2.5 rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
             >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              {isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
             </button>
             <button 
               onClick={onLaunch}
@@ -146,16 +150,18 @@ export default function LandingPage({ onLaunch, isDark, toggleTheme }) {
             >
               <button 
                 onClick={onLaunch}
+                aria-label="Launch Live Demo"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-text-primary text-background text-[16px] font-semibold hover:shadow-xl hover:shadow-text-primary/10 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                Launch Live Demo <Play size={18} fill="currentColor" />
+                Launch Live Demo <Play size={18} fill="currentColor" aria-hidden="true" />
               </button>
-              <a 
-                href="#architecture"
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-surface border border-border-subtle text-text-primary text-[16px] font-medium hover:border-border-strong transition-all flex items-center justify-center"
+              <button 
+                onClick={() => setIsArchModalOpen(true)}
+                aria-label="Explore Architecture Modal"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-surface border border-border-subtle text-text-primary text-[16px] font-medium hover:border-border-strong transition-all flex items-center justify-center cursor-pointer"
               >
                 Explore Architecture
-              </a>
+              </button>
             </motion.div>
           </motion.div>
           
@@ -207,7 +213,7 @@ export default function LandingPage({ onLaunch, isDark, toggleTheme }) {
                     {stat.value}
                   </div>
                   <div className="flex items-center gap-2 text-text-secondary font-medium">
-                    <stat.icon size={16} /> {stat.label}
+                    <stat.icon size={16} aria-hidden="true" /> {stat.label}
                   </div>
                 </div>
               ))}

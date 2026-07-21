@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from geoalchemy2 import Geometry
 from datetime import datetime
 from core.database import Base
@@ -18,7 +18,7 @@ class CaseMaster(Base):
 class Accused(Base):
     __tablename__ = "Accused"
     id = Column(Integer, primary_key=True, index=True)
-    case_id = Column(Integer)
+    case_id = Column(Integer, ForeignKey("CaseMaster.id", ondelete="CASCADE"), nullable=False, index=True)
     accused_name = Column(String)
     age = Column(Integer)
     arrested = Column(Boolean)

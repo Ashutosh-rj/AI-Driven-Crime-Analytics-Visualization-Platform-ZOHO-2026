@@ -1,4 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+function Toast({ message, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4000)
+    return () => clearTimeout(t)
+  }, [onClose])
+
+  return (
+    <div role="status" aria-live="polite" className="fixed bottom-6 right-6 z-[9999] bg-surface border border-accent-emerald/40 text-text-primary rounded-2xl shadow-2xl shadow-black/20 px-6 py-4 max-w-sm animate-slide-up">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-accent-emerald/20 flex items-center justify-center">
+          <svg className="w-3 h-3 text-accent-emerald" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+        </span>
+        <pre className="text-sm leading-relaxed whitespace-pre-wrap font-mono">{message}</pre>
+        <button onClick={onClose} className="ml-2 text-text-muted hover:text-text-primary transition-colors flex-shrink-0" aria-label="Dismiss">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function StationUI({ rbacRole }) {
   const [formData, setFormData] = useState({
@@ -6,6 +27,7 @@ export default function StationUI({ rbacRole }) {
   })
   const [ledger, setLedger] = useState([])
   const [loading, setLoading] = useState(false)
+  const [toast, setToast] = useState(null)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -20,7 +42,8 @@ export default function StationUI({ rbacRole }) {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-API-Key': 'KSP-DATATHON-2026'
+          'X-API-Key': 'KSP-DATATHON-2026',
+          'Authorization': 'Bearer dummy_token_dev_fallback'
         },
         body: JSON.stringify({ ...formData, latitude: lat, longitude: lng })
       })
@@ -34,7 +57,7 @@ export default function StationUI({ rbacRole }) {
           { time, tag: 'tag-agent', msg: `Topic: crime.events | Event: FIRRegistered (${data.crimeNo})` },
           { time, tag: 'tag-graph', msg: data.neo4jProjection }
         ])
-        alert(`[SUCCESS - LIVE BACKEND]\nFIR Number: ${data.crimeNo}\nLatency: ${data.oltpLatencyMs}ms`)
+        setToast(`✅ SUCCESS — LIVE BACKEND\nFIR Number: ${data.crimeNo}\nLatency: ${data.oltpLatencyMs}ms`)
       }
     } catch (err) {
       console.error(err)
@@ -46,11 +69,15 @@ export default function StationUI({ rbacRole }) {
         { time, tag: 'tag-agent', msg: `Topic: crime.events | Event: FIRRegistered (${firNo})` },
         { time, tag: 'tag-graph', msg: `Graph Projection created edge (${formData.accused}) -[:ACCUSED_IN]-> (${firNo})` }
       ])
-      alert(`[SUCCESS - CLIENT SIMULATION]\nFIR Number: ${firNo}`)
+      setToast(`✅ SUCCESS — CLIENT SIMULATION\nFIR Number: ${firNo}`)
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
+    <>
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
       {/* Registration Form */}
       <div className="glass-panel group">
@@ -67,38 +94,46 @@ export default function StationUI({ rbacRole }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-[13px] font-semibold text-text-secondary">Station Unit <span className="font-mono text-[10px] text-text-muted ml-1">(UnitID)</span></label>
+              <label htmlFor="stationUnit" className="block text-[13px] font-semibold text-text-secondary">Station Unit <span className="font-mono text-[10px] text-text-muted ml-1">(UnitID)</span></label>
               <div className="relative">
-                <select className="glass-input appearance-none" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}>
-                  <option value="U-101">Bengaluru South (U-101)</option>
-                  <option value="U-102">Bengaluru Central (U-102)</option>
+                <select id="stationUnit" className="glass-input appearance-none" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}>
+                  <option className="bg-surface text-text-primary" value="U-101">Bengaluru South (U-101)</option>
+                  <option className="bg-surface text-text-primary" value="U-102">Bengaluru Central (U-102)</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-text-muted">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
             </div>
             <div className="space-y-2">
-              <label className="block text-[13px] font-semibold text-text-secondary">Act Master <span className="font-mono text-[10px] text-text-muted ml-1">(ActCode)</span></label>
+              <label htmlFor="actMaster" className="block text-[13px] font-semibold text-text-secondary">Act Master <span className="font-mono text-[10px] text-text-muted ml-1">(ActCode)</span></label>
               <div className="relative">
-                <select className="glass-input appearance-none" value={formData.act} onChange={e => setFormData({...formData, act: e.target.value})}>
-                  <option value="BNS 2023">BNS 2023 (New IPC)</option>
-                  <option value="NDPS 1985">NDPS Act 1985</option>
+                <select id="actMaster" className="glass-input appearance-none" value={formData.act} onChange={e => setFormData({...formData, act: e.target.value})}>
+                  <option className="bg-surface text-text-primary" value="BNS 2023">BNS 2023 (New IPC)</option>
+                  <option className="bg-surface text-text-primary" value="NDPS 1985">NDPS Act 1985</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-text-muted">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
             </div>
           </div>
           <div className="space-y-2">
-            <label className="block text-[13px] font-semibold text-text-secondary">Accused / Suspect Name <span className="font-mono text-[10px] text-text-muted ml-1">(AccusedName)</span></label>
-            <input type="text" className="glass-input" required placeholder="e.g. Syed Imran" value={formData.accused} onChange={e => setFormData({...formData, accused: e.target.value})} />
+            <label htmlFor="victimName" className="block text-[13px] font-semibold text-text-secondary">Victim / Complainant Name <span className="font-mono text-[10px] text-text-muted ml-1">(VictimName)</span></label>
+            <input id="victimName" type="text" className="glass-input" placeholder="e.g. Rajesh Kumar" value={formData.victim} onChange={e => setFormData({...formData, victim: e.target.value})} />
           </div>
-          <button type="submit" disabled={loading} className={`btn-primary mt-6 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}>
+          <div className="space-y-2">
+            <label htmlFor="accusedName" className="block text-[13px] font-semibold text-text-secondary">Accused / Suspect Name <span className="font-mono text-[10px] text-text-muted ml-1">(AccusedName)</span></label>
+            <input id="accusedName" type="text" className="glass-input" required placeholder="e.g. Syed Imran" value={formData.accused} onChange={e => setFormData({...formData, accused: e.target.value})} />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="briefFacts" className="block text-[13px] font-semibold text-text-secondary">Brief Facts <span className="font-mono text-[10px] text-text-muted ml-1">(BriefFacts)</span></label>
+            <textarea id="briefFacts" rows={3} className="glass-input resize-none" placeholder="Describe the incident in brief..." value={formData.briefFacts} onChange={e => setFormData({...formData, briefFacts: e.target.value})} />
+          </div>
+          <button type="submit" aria-busy={loading} disabled={loading} className={`btn-primary mt-6 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}>
             {loading ? (
               <span className="flex items-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 Processing Transaction...
               </span>
             ) : (
@@ -136,5 +171,6 @@ export default function StationUI({ rbacRole }) {
         </div>
       </div>
     </div>
+    </>
   )
 }
