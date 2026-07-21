@@ -29,7 +29,9 @@ class FIRRegistrationData(BaseModel):
 
 class SwarmQueryRequest(BaseModel):
     prompt: str = Field(..., min_length=10, max_length=5000)
-    rbacRole: str = Field(..., pattern=r"^[A-Z_]+$")
+    # Pattern allows TitleCase_With_Underscores format used by all real roles
+    # e.g. Chief_Intel_Officer, District_SP, SHO_Inspector, P09, DGP
+    rbacRole: str = Field(..., pattern=r"^[A-Za-z0-9_]+$")
 
 class SwarmQueryData(BaseModel):
     model: str

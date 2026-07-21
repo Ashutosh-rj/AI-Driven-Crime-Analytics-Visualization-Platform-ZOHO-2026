@@ -213,6 +213,11 @@ def client(db_session, monkeypatch):
     monkeypatch.setattr("main.start_kafka_consumer", _noop)
     monkeypatch.setattr("main.stop_kafka_consumer", _noop)
 
+    # Mock seed_database: it runs via asyncio.to_thread() in lifespan, creating
+    # SQLite connections in a worker thread. SQLite objects cannot cross thread
+    # boundaries — this causes ProgrammingError spam in teardown logs.
+    monkeypatch.setattr("main.seed_database", lambda: None)
+
     with TestClient(app) as test_client:
         yield test_client
 
