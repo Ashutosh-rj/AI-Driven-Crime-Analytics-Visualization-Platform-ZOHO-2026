@@ -57,7 +57,7 @@ _make_module("fastapi_cache.backends.inmemory")
 # ── redis (async) ─────────────────────────────────────────────────────────────
 # slowapi's `limits` library reads redis.__version__ and requires >= 3.0.
 # Without __version__, limits reports "0.0.0" and rejects our mock.
-_redis = _make_module("redis", __version__="4.6.0", VERSION=(4, 6, 0))
+_redis = _make_module("redis", __version__="4.6.0", VERSION=(4, 6, 0), from_url=MagicMock())
 _redis_async = _make_module("redis.asyncio",
                             from_url=MagicMock(return_value=AsyncMock()),
                             __version__="4.6.0")
