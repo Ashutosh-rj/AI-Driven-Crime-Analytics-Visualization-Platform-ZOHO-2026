@@ -16,7 +16,7 @@ geoalchemy2==0.14.3
 Shapely==2.0.2
 confluent-kafka==2.5.0
 qdrant-client==1.9.0
-sentence-transformers==3.1.0
+sentence-transformers>=3.1.0
 huggingface-hub
 scikit-learn==1.5.0
 pandas==2.1.4
