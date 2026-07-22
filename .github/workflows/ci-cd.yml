@@ -79,6 +79,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           scanners: 'vuln'
+          timeout: '20m'
 
   deploy-to-staging:
     needs: security-scan
