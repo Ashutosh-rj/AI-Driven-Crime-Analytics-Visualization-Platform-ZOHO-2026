@@ -13,8 +13,9 @@ router = APIRouter(prefix="/api/v2/stats", tags=["Stats"])
 @limiter.limit("100/minute")
 @cache(expire=30)
 async def get_stats(request: Request, db: Session = Depends(get_db)):
+    import asyncio
     repo = FIRRepository(db)
-    total_cases, closed_cases, events = repo.get_stats()
+    total_cases, closed_cases, events = await asyncio.to_thread(repo.get_stats)
     
     active_cases = total_cases - closed_cases
     clearance_rate = (closed_cases / total_cases * 100) if total_cases > 0 else 0
@@ -25,13 +26,7 @@ async def get_stats(request: Request, db: Session = Depends(get_db)):
             timestamp=datetime.utcnow(),
             metrics={
                 "activeFIRs": active_cases,
-                "zeroFIRTransfers": 18,
-                "activeOfficers": 64,
-                "avgLatencyMs": 41,
-                "roiPercent": 443.8,
-                "unitCostUsd": 0.00015,
-                "clearanceRatePct": round(clearance_rate, 2),
-                "systemUptimePct": 99.9986
+                "clearanceRatePct": round(clearance_rate, 2)
             },
             activeCases=active_cases,
             totalCases=total_cases,

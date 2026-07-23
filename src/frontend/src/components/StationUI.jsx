@@ -42,7 +42,6 @@ export default function StationUI({ rbacRole }) {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-API-Key': 'KSP-DATATHON-2026',
           'Authorization': 'Bearer dummy_token_dev_fallback'
         },
         body: JSON.stringify({ ...formData, latitude: lat, longitude: lng })
@@ -61,15 +60,11 @@ export default function StationUI({ rbacRole }) {
       }
     } catch (err) {
       console.error(err)
-      // Fallback
-      const firNo = `FIR/2026/01${Math.floor(Math.random() * 89 + 10)}`
       setLedger(prev => [
         ...prev,
-        { time, tag: 'tag-sql', msg: `INSERT INTO CaseMaster (${firNo}) -> 31ms.` },
-        { time, tag: 'tag-agent', msg: `Topic: crime.events | Event: FIRRegistered (${firNo})` },
-        { time, tag: 'tag-graph', msg: `Graph Projection created edge (${formData.accused}) -[:ACCUSED_IN]-> (${firNo})` }
+        { time, tag: 'tag-sql', msg: `[ERROR] Failed to connect to OLTP backend.` }
       ])
-      setToast(`✅ SUCCESS — CLIENT SIMULATION\nFIR Number: ${firNo}`)
+      setToast(`❌ ERROR — Registration Failed\nCould not connect to backend.`)
     } finally {
       setLoading(false)
     }

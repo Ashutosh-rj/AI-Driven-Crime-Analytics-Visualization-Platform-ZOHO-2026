@@ -86,23 +86,33 @@ async def kafka_consumer_loop():
 
 async def _flush_batch(payloads: list[dict], msgs: list):
     """Write a batch of payloads to DB in one transaction and push to WebSockets."""
-    db: Session = SessionLocal()
-    try:
-        new_events = [
-            EventsLedger(
-                event_id=p.get("event_id"),
-                topic="crime.events",
-                event_type=p.get("event_type"),
-                case_no=p.get("case_no")
-            )
-            for p in payloads
-        ]
-        db.bulk_save_objects(new_events)
-        db.commit()
+    def _sync_db_kafka_commit():
+        db: Session = SessionLocal()
+        try:
+            new_events = [
+                EventsLedger(
+                    event_id=p.get("event_id"),
+                    topic="crime.events",
+                    event_type=p.get("event_type"),
+                    case_no=p.get("case_no")
+                )
+                for p in payloads
+            ]
+            db.bulk_save_objects(new_events)
+            db.commit()
 
-        # Commit all Kafka offsets after successful DB write
-        for msg in msgs:
-            _consumer.commit(msg)
+            # Commit all Kafka offsets after successful DB write
+            for msg in msgs:
+                _consumer.commit(msg)
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Batch DB write failed: {e}")
+            raise
+        finally:
+            db.close()
+
+    try:
+        await asyncio.to_thread(_sync_db_kafka_commit)
 
         # Push to WebSockets
         dead_sockets = []
@@ -119,10 +129,7 @@ async def _flush_batch(payloads: list[dict], msgs: list):
                 active_websockets.remove(ws)
 
     except Exception as e:
-        db.rollback()
         logger.error(f"Batch DB write failed: {e}")
-    finally:
-        db.close()
 
 async def start_kafka_consumer():
     global consumer_task

@@ -82,7 +82,7 @@ app = FastAPI(
     
     This API serves as the backbone for the 31-District Statewide Executive Compliance Matrix.
     It integrates **PostgreSQL (PostGIS)** for spatial indexing, **Neo4j** for graph syndicates,
-    **Redpanda/Kafka** for event-driven pipelines, and a **15-Agent Swarm** powered by LangGraph.
+    **Redpanda/Kafka** for event-driven pipelines, and a **6-Agent Swarm** powered by LangGraph.
     
     *Confidential & Proprietary - Authorized Personnel Only.*
     """,
@@ -116,6 +116,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Fix for prometheus_fastapi_instrumentator <= 6.1.0 with FastAPI >= 0.109.0
+import fastapi.routing
+if hasattr(fastapi.routing, '_IncludedRouter'):
+    fastapi.routing._IncludedRouter.path = property(lambda self: getattr(self, 'prefix', ''))
 
 # 1. Observability: Expose /metrics for Prometheus
 Instrumentator().instrument(app).expose(app)

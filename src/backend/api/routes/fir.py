@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/v2/fir", tags=["FIR"])
 
 @router.post("/register", status_code=201, response_model=StandardResponse[FIRRegistrationData])
 @limiter.limit("20/minute")
-async def register_fir(
+def register_fir(
     request: Request, 
     req_body: FIRRegistrationRequest, 
     db: Session = Depends(get_db), 
@@ -73,7 +73,7 @@ async def register_fir(
                 crimeNo=new_case.crime_no,  # BUG-01 fix: use actual generated crime number
                 caseMasterId=new_case.id,
                 oltpLatencyMs=int((time.time() - start_time) * 1000),
-                neo4jProjection=f"MATCH (p:Person {{name: '{req_body.accused}'}})-[:ACCUSED_IN]->(c:Case {{id: '{new_case.crime_no}'}}) RETURN c"
+                neo4jProjection=f"MATCH (p:Person {{name: $accused_name}})-[:ACCUSED_IN]->(c:Case {{id: $crime_no}}) RETURN c"
             )
         )
     except Exception as e:

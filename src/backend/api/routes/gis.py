@@ -12,8 +12,9 @@ router = APIRouter(prefix="/api/v2/gis", tags=["GIS"])
 @router.get("/hotspots", response_model=StandardResponse[HotspotData])
 @limiter.limit("60/minute")
 async def get_hotspots(request: Request, db: Session = Depends(get_db)):
+    import asyncio
     repo = FIRRepository(db)
-    cases = repo.get_all_cases()
+    cases = await asyncio.to_thread(repo.get_all_cases)
     
     # 1. Extract coordinates from PostGIS
     case_records = []
@@ -41,9 +42,7 @@ async def get_hotspots(request: Request, db: Session = Depends(get_db)):
         # Fallback empty list if ML service is down
         pass
     
-    features = ml_hotspots + [
-        {"type": "PatrolSector", "name": "Malleshwaram Hub", "coords": [13.0100, 77.5500], "radiusMeters": 1000, "responseOptPct": 38}
-    ]
+    features = ml_hotspots
             
     return StandardResponse(
         status="success",

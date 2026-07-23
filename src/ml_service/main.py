@@ -55,6 +55,7 @@ async def detect_hotspots(req: HotspotRequest):
         
         crimes = [case_records[i]["crime"] for i in range(len(case_records)) if labels[i] == k]
         dominant_crime = max(set(crimes), key=crimes.count) if crimes else "Unknown"
+        # Heuristic calculation based on cluster density, not a trained ML outcome
         risk_pct = min(99.0, 50.0 + (incident_count * 5.0))
         
         hotspots.append({

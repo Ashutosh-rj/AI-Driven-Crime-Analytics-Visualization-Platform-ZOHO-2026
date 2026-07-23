@@ -1,13 +1,13 @@
 version: '3.8'
 
 services:
-  ksp-backend:
-    build: 
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: ksp-ai-backend
+  ksp-backend-v3:
+    image: datathon2026-ksp-backend:latest
+    container_name: ksp-ai-backend-v3
+    volumes:
+      - ./src/backend:/app/src/backend
     ports:
-      - "8000:8000"
+      - "8002:8000"
     networks:
       - external_net
       - internal_net
@@ -29,9 +29,9 @@ services:
         max-file: "3"
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_started
       neo4j:
-        condition: service_healthy
+        condition: service_started
       redpanda:
         condition: service_started
       qdrant:
@@ -65,7 +65,7 @@ services:
         max-size: "10m"
         max-file: "3"
     depends_on:
-      - ksp-backend
+      - ksp-backend-v3
     restart: unless-stopped
     deploy:
       resources:

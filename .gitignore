@@ -153,3 +153,8 @@ qdrant_storage/
 *.temp
 .scratch/
 tmp/
+
+# ─── Datathon Specific Ignores ───────────────────────────────────────────────
+image.tar
+.venv_trivy/
+tags.json

@@ -26,7 +26,7 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Security(securi
     token = credentials.credentials
     
     # DEV ENVIRONMENT BYPASS for hackathon
-    if token == "dummy_token_dev_fallback" or token.startswith("dummy"):
+    if settings.ENVIRONMENT == "development" and (token == "dummy_token_dev_fallback" or token.startswith("dummy")):
         return {"realm_access": {"roles": ["SHO_Inspector", "DGP", "P09", "P02"]}}
         
     jwks = get_keycloak_public_key()
