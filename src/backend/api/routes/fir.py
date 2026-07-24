@@ -73,7 +73,7 @@ def register_fir(
                 crimeNo=new_case.crime_no,  # BUG-01 fix: use actual generated crime number
                 caseMasterId=new_case.id,
                 oltpLatencyMs=int((time.time() - start_time) * 1000),
-                neo4jProjection=f"MATCH (p:Person {{name: $accused_name}})-[:ACCUSED_IN]->(c:Case {{id: $crime_no}}) RETURN c"
+                neo4jProjection="MATCH (p:Person {name: $accused_name})-[:ACCUSED_IN]->(c:Case {id: $crime_no}) RETURN c"
             )
         )
     except Exception as e:
