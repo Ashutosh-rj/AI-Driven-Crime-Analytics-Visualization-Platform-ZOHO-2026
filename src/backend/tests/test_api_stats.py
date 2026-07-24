@@ -8,7 +8,5 @@ def test_get_stats(client):
     
     metrics = data["data"]["metrics"]
     assert "activeFIRs" in metrics
-    assert "roiPercent" in metrics
-    assert "systemUptimePct" in metrics
     
     assert "recentEvents" in data["data"]

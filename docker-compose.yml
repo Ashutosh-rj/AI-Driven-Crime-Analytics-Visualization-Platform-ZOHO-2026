@@ -1,13 +1,15 @@
-version: '3.8'
 
 services:
   ksp-backend-v3:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
     image: datathon2026-ksp-backend:latest
     container_name: ksp-ai-backend-v3
     volumes:
       - ./src/backend:/app/src/backend
     ports:
-      - "8002:8000"
+      - "8000:8000"
     networks:
       - external_net
       - internal_net

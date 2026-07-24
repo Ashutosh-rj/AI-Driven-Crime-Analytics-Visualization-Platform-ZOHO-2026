@@ -17,7 +17,7 @@ echo   Waiting 3 seconds for the server to initialize...
 echo ===============================================================================
 timeout /t 3 /nobreak >nul
 
-start "" http://localhost:8000/
+start "" http://localhost:5173/
 
 echo.
 echo [INFO] The web portal has been opened in your default browser.

@@ -43,7 +43,8 @@ export default function AgentSwarm({ rbacRole }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'KSP-DATATHON-2026'
+          'X-API-Key': 'KSP-DATATHON-2026',
+          'Authorization': 'Bearer dummy_token_dev_fallback'
         },
         body: JSON.stringify({ prompt, rbacRole: 'Chief_Intel_Officer' })
       })

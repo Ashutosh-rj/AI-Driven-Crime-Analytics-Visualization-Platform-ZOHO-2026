@@ -38,13 +38,25 @@ export default function StationUI({ rbacRole }) {
       const lat = 12.9716 + (Math.random() - 0.5) * 0.1;
       const lng = 77.5946 + (Math.random() - 0.5) * 0.1;
 
+      const payload = {
+        unit: formData.unit,
+        act: formData.act,
+        section: formData.section,
+        accused: formData.accused || 'Unknown Accused',
+        latitude: lat,
+        longitude: lng
+      }
+      
+      if (formData.victim) payload.victim = formData.victim;
+      if (formData.briefFacts) payload.briefFacts = formData.briefFacts;
+
       const resp = await fetch('http://localhost:8000/api/v2/fir/register', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': 'Bearer dummy_token_dev_fallback'
         },
-        body: JSON.stringify({ ...formData, latitude: lat, longitude: lng })
+        body: JSON.stringify(payload)
       })
       
       if (resp.ok) {
