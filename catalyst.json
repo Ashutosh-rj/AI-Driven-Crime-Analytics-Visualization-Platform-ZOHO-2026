@@ -1,0 +1,8 @@
+{
+  "client": {
+    "source": "src/frontend"
+  },
+  "app_sail": {
+    "source": "src/backend"
+  }
+}

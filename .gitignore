@@ -158,3 +158,8 @@ tmp/
 image.tar
 .venv_trivy/
 tags.json
+
+# ─── Zoho Catalyst ───────────────────────────────────────────────────────────
+.catalyst/
+.catalystrc
+catalyst.log
