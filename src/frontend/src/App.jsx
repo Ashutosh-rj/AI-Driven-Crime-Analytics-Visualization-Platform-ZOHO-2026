@@ -170,7 +170,7 @@ function App() {
       <main className="flex-1 container mx-auto p-6 md:p-8 lg:p-10 z-10 animate-fade-in relative">
         <div className={activeTab === 'station' ? 'block' : 'hidden'}><StationUI rbacRole={rbacRole} liveEvents={liveEvents} /></div>
         <div className={activeTab === 'swarm' ? 'block' : 'hidden'}><AgentSwarm rbacRole={rbacRole} /></div>
-        <div className={activeTab === 'gis' ? 'block' : 'hidden'}><GisMap liveEvents={liveEvents} /></div>
+        <div className={activeTab === 'gis' ? 'block' : 'hidden'}><GisMap liveEvents={liveEvents} isActive={activeTab === 'gis'} /></div>
         <div className={activeTab === 'dashboard' ? 'block' : 'hidden'}><Dashboard stats={stats} liveEvents={liveEvents} /></div>
       </main>
     </div>

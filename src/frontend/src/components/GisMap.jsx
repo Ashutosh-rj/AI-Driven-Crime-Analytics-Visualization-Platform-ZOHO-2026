@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Circle, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Circle, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
@@ -17,7 +17,17 @@ const stationIcon = new L.DivIcon({
   iconSize: [14, 14]
 })
 
-export default function GisMap({ liveEvents = [] }) {
+function MapInvalidator({ isActive }) {
+  const map = useMap()
+  useEffect(() => {
+    if (isActive) {
+      setTimeout(() => map.invalidateSize(), 100)
+    }
+  }, [isActive, map])
+  return null
+}
+
+export default function GisMap({ liveEvents = [], isActive = false }) {
   const [hotspots, setHotspots] = useState([])
   const [hotspotStatus, setHotspotStatus] = useState('loading') // 'loading' | 'ok' | 'offline'
 
@@ -58,6 +68,7 @@ export default function GisMap({ liveEvents = [] }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
+          <MapInvalidator isActive={isActive} />
           
           {/* Police Stations */}
           <Marker position={[12.9250, 77.5840]} icon={stationIcon}>
